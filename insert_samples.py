@@ -50,9 +50,10 @@ print("Inserted blogs")
 for _ in range(200):
     user_id = choice(user_ids)
     blog_id = choice(blog_ids)
+    comment_id = str(uuid4())
 
     user = list(db.users.find({"user_id": user_id}))[0]
-    db.comments.insert_one({"author_id": user_id, 'content': fake.text()[:150], "username": user["username"],
+    db.comments.insert_one({"author_id": user_id, 'content': fake.text()[:150], "comment_id": comment_id,
                            "blog_id": blog_id, "created_date": datetime.datetime.now()})
 
 print("Inserted comments")

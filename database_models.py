@@ -45,10 +45,12 @@ class BlogRecord(BaseModel):
 
 
 class CommentRecord(BaseModel):
+    comment_id: StrictStr
     blog_id: StrictStr
     author_id: StrictStr
     content: StrictStr
     created_date: datetime.datetime
+    updated_date: Optional[datetime.datetime] = None
 
     @field_validator('author_id', 'blog_id', mode='before')
     @classmethod

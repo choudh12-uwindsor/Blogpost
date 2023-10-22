@@ -57,7 +57,24 @@ class ListBlog(BaseModel):
     categories: Optional[List[str]] = None
 
 
-class CreateComment(BaseModel):
+class CommentID(BaseModel):
+    comment_id: StrictStr
+
+
+class CreateComment(BlogID):
     blog_id: StrictStr
     content: StrictStr
     author_id: StrictStr
+
+
+class ListComment(BlogID):
+    user_id: StrictStr
+
+
+class UpdateComment(CommentID):
+    author_id: StrictStr
+    content: StrictStr
+
+
+class DeleteComment(UpdateComment):
+    pass

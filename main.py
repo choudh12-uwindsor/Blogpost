@@ -94,18 +94,16 @@ def fetch_blog(data: BlogID):
     return {"status": "successful", "message": "OK", "result": record, "code": 200}
 
 
-@app.put("/blog/update")
+@app.post("/blog/update")
 def update_blog(data: UpdateBlog):
-    if db.users.count_documents({"user_id": data.author_id}) == 0:
-        return {"status": "successful", "message": "Author does not exist", "code": 401}
-
-    if db.blogs.count_documents({"blog_id": data.blog_id}) == 0:
-        return {"status": "successful", "message": "Blog does not exist", "code": 401}
+    if db.blogs.count_documents({"author_id": data.author_id, "blog_id": data.blog_id}) == 0:
+        return {"status": "successful", "message": "User does not have priviledge to update the blog", "code": 401}
 
     json_data = data.model_dump(mode="json")
     json_data.pop("blog_id")
     json_data.pop("author_id")
     json_data["updated_date"] = datetime.datetime.now()
+    json_data = {"$set": json_data}
     try:
         db.blogs.update_one({"blog_id": data.blog_id}, json_data)
     except Exception:
@@ -134,7 +132,7 @@ def create_comment(data: CreateComment):
     if db.users.count_documents({"user_id": data.author_id}) == 0:
         return {"status": "successful", "message": "Author does not exist", "code": 401}
 
-    record = CommentRecord(author_id=data.author_id, content=data.content,
+    record = CommentRecord(author_id=data.author_id, content=data.content, comment_id=str(uuid4()),
                            blog_id=data.blog_id, created_date=datetime.datetime.now())
 
     try:
@@ -142,6 +140,53 @@ def create_comment(data: CreateComment):
     except Exception:
         return {"status": "error", "message": "Internal server error", "code": 500}
     return {"status": "successful", "message": "OK", "code": 201}
+
+
+@app.get("/comment/list")
+def list_comments(data: ListComment):
+    if db.users.count_documents({"user_id": data.user_id}) == 0:
+        return {"status": "successful", "message": "Unauthenticated user", "code": 401}
+
+    try:
+        result = []
+        for record in db.comments.find({"blog_id": data.blog_id}):
+            record.pop("_id")
+            record.pop("blog_id")
+            record["created_date"] = record["created_date"].strftime("%Y-%m-%d %H:%M")
+            result.append(record)
+        return {"status": "error", "result": result, "code": 500}
+    except Exception:
+        return {"status": "error", "message": "Internal server error", "code": 500}
+
+
+@app.delete("/comment/delete")
+def delete_comment(data: DeleteComment):
+    if db.comments.count_documents({"comment_id": data.comment_id, "author_id": data.user_id}) == 0:
+        return {"status": "successful", "message": "User does not have priviledge to delete the comment", "code": 401}
+
+    try:
+        db.comments.delete_one({"comment_id": data.comment_id})
+    except Exception:
+        return {"status": "error", "message": "Internal server error", "code": 500}
+
+    return {"status": "successful", "message": "OK", "code": 204}
+
+
+@app.post("/comment/update")
+def update_comment(data: UpdateComment):
+    if db.comments.count_documents({"comment_id": data.comment_id, "author_id": data.author_id}) == 0:
+        return {"status": "successful", "message": "User does not have priviledge to update the comment", "code": 401}
+
+    json_data = data.model_dump(mode="json")
+    json_data.pop("comment_id")
+    json_data.pop("author_id")
+    json_data["updated_date"] = datetime.datetime.now()
+    json_data = {"$set": json_data}
+    try:
+        db.comments.update_one({"comment_id": data.comment_id}, json_data)
+    except Exception:
+        return {"status": "error", "message": "Internal server error", "code": 500}
+    return {"status": "successful", "message": "OK", "code": 204}
 
 
 if __name__ == "__main__":
