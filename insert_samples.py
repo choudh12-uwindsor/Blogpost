@@ -1,4 +1,5 @@
 import datetime
+from hashlib import md5
 from uuid import uuid4
 from random import choice, choices
 
@@ -15,30 +16,32 @@ db.drop_collection("users")
 db.drop_collection("blogs")
 db.drop_collection("comments")
 
-raise KeyError()
 # create fake users
 user_ids = []
 for _ in range(100):
     id_, name = str(uuid4()), fake.name()
     email = name.replace(" ", "").replace(".", "") + "@xyz.com"
-    db.users.insert_one({"user_id": id_, "username": name, "email": email,
-                         "password": bcrypt.hashpw(email.encode('utf-8'), HASH_SALT).decode('utf8'),
+    db.users.insert_one({"user_id": id_, "username": name.lower().replace(" ", ""), "email": email,
+                         "first_name": name.split(" ")[0],
+                         "last_name": name.split(" ")[1], "password": md5(email.encode("utf8")).hexdigest(),
                          "registered_date": datetime.datetime.now()})
     user_ids.append(id_)
 print("Inserted users")
 
 # create fake blogs
-sample_tags = ["tech", "python", "windows", "door", "furniture"]
-sample_categories = ["tech", "finance", "lifestyle", "home"]
+sample_maps = {"tech": ["python", "java", "devops", "dynamic programming"],
+               "finance": ["stock market", "options", "accounting"]}
 blog_ids = []
 for _ in range(50):
     id_ = str(uuid4())
     user_id = choice(user_ids)
     content = fake.text()
     title = content[:50]
+    category = choice(list(sample_maps.keys()))
+    tags = choices(sample_maps[category], k=2)
 
     db.blogs.insert_one({"author_id": user_id, "title": title, "content": content,
-                         "tags": choices(sample_tags, k=2), "categories": choices(sample_categories, k=1),
+                         "tags": tags, "categories": [category],
                          "created_date": datetime.datetime.now(), "blog_id": id_})
     blog_ids.append(id_)
 print("Inserted blogs")

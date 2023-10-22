@@ -1,15 +1,15 @@
 import datetime
-from typing import Union, List, Optional
+from typing import List, Optional
 from uuid import UUID
 
-import bcrypt
+from hashlib import md5
 from pydantic import BaseModel, StrictStr, EmailStr, field_validator
-
-from config import HASH_SALT
 
 
 class UserRecord(BaseModel):
     user_id: StrictStr
+    first_name: StrictStr
+    last_name: StrictStr
     username: StrictStr
     email: EmailStr
     password: StrictStr
@@ -21,10 +21,10 @@ class UserRecord(BaseModel):
         UUID(v, version=4)
         return v
 
-    @field_validator('password', mode='before')
+    @field_validator('password', mode='after')
     @classmethod
-    def create_hash(cls, v):
-        return bcrypt.hashpw(v.encode('utf-8'), HASH_SALT).decode('utf8')
+    def create_hash(cls, v: str):
+        return md5(v.encode("utf8")).hexdigest()
 
 
 class BlogRecord(BaseModel):

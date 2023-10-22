@@ -1,6 +1,5 @@
-import datetime
-from typing import Union, List, Optional
-from uuid import UUID
+import re
+from typing import List, Optional
 
 from pydantic import BaseModel, StrictStr, EmailStr, field_validator
 
@@ -12,6 +11,19 @@ class AuthUser(BaseModel):
 
 class RegisterUser(AuthUser):
     username: StrictStr
+    first_name: StrictStr
+    last_name: StrictStr
+
+    @field_validator('password', mode='before')
+    @classmethod
+    def validate_password(cls, v):
+        if len(v) < 8:
+            raise ValueError("Password length must be minimum 8 characters")
+        elif not re.search(r"[a-z]", v) or not re.search(r"[A-Z]", v):
+            raise ValueError("Password must contain lower case and upper case characters")
+        elif not re.search(r"[!@$&]", v) or not re.search(r"\d", v):
+            raise ValueError("Password must contain special characters and digits")
+        return v
 
 
 class BlogID(BaseModel):

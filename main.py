@@ -15,10 +15,14 @@ db = MongoClient(**MONGO_CREDS)["blogpost"]
 @app.put("/user/register")
 def register_user(data: RegisterUser):
     record = UserRecord(user_id=str(uuid4()), username=data.username, email=data.email, password=data.password,
-                        registered_date=datetime.datetime.now())
+                        registered_date=datetime.datetime.now(), first_name=data.first_name,
+                        last_name=data.last_name)
 
     if db.users.count_documents({"email": data.email}) > 0:
-        return {"status": "successful", "message": "User already exists", "code": 400}
+        return {"status": "successful", "message": "Email already exists", "code": 400}
+
+    if db.users.count_documents({"username": data.username}) > 0:
+        return {"status": "successful", "message": "Username already exists", "code": 400}
 
     try:
         db.users.insert_one(record.model_dump(mode="json"))
@@ -29,7 +33,7 @@ def register_user(data: RegisterUser):
 
 @app.get("/user/authenticate")
 def authenticate_user(data: AuthUser):
-    hash_ = bcrypt.hashpw(data.password.encode('utf-8'), HASH_SALT).decode('utf8')
+    hash_ = md5(data.password.encode("utf8")).hexdigest()
     if db.users.count_documents({"email": data.email, "password": hash_}) == 1:
         return {"status": "successful", "message": "User authenticated", "code": 200}
     else:
