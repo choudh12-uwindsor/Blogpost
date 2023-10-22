@@ -76,5 +76,5 @@ class UpdateComment(CommentID):
     content: StrictStr
 
 
-class DeleteComment(UpdateComment):
-    pass
+class DeleteComment(CommentID):
+    user_id: StrictStr

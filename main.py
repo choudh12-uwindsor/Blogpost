@@ -1,5 +1,6 @@
 from uuid import uuid4
 
+import pymongo
 import uvicorn
 from fastapi import FastAPI
 from pymongo import MongoClient
@@ -10,6 +11,7 @@ from database_models import *
 
 app = FastAPI()
 db = MongoClient(**MONGO_CREDS)["blogpost"]
+db.blogs.create_index([('title', 'text'), ('content', 'text')])
 
 
 @app.put("/user/register")
@@ -47,7 +49,7 @@ def list_blogs(data: ListBlog):
 
     conditions = {}
     if data.search_string:
-        conditions["title"] = f"/{data.search_string}/"
+        conditions["$text"] = {"$search": f"/{data.search_string}/"}
     if data.tags:
         conditions["$or"] = []
         for tag in data.tags:
@@ -154,7 +156,7 @@ def list_comments(data: ListComment):
             record.pop("blog_id")
             record["created_date"] = record["created_date"].strftime("%Y-%m-%d %H:%M")
             result.append(record)
-        return {"status": "error", "result": result, "code": 500}
+        return {"status": "successful", "result": result, "code": 200}
     except Exception:
         return {"status": "error", "message": "Internal server error", "code": 500}
 
